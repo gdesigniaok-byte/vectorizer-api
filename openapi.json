@@ -1,0 +1,53 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vectorization API",
+    "version": "1.1.0"
+  },
+  "servers": [
+    { "url": "https://YOUR-RENDER-URL.onrender.com" }
+  ],
+  "paths": {
+    "/vectorize": {
+      "post": {
+        "summary": "Convert an image to a vector SVG or PDF",
+        "operationId": "vectorizeImage",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["svg", "pdf"], "default": "svg" }
+          },
+          {
+            "name": "flatten_background",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["none", "white"], "default": "none" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful vectorization",
+            "content": {
+              "image/svg+xml": { "schema": { "type": "string", "format": "binary" } },
+              "application/pdf": { "schema": { "type": "string", "format": "binary" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
