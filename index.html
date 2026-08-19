@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vectorizador de Logos e Imágenes</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", sans-serif; max-width: 640px; margin: 60px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.sub { color: #666; margin-top: 0; }
+  #drop { border: 2px dashed #999; border-radius: 12px; padding: 48px 20px; text-align: center; cursor: pointer; transition: all .15s; }
+  #drop.hover { border-color: #333; background: #fafafa; }
+  #drop p { color: #666; margin: 0; }
+  input[type=file] { display: none; }
+  .row { display: flex; gap: 16px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+  select, input[type=text] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; }
+  #status { color: #666; font-size: .9rem; min-height: 1.2em; }
+  #result { margin-top: 20px; }
+  #result svg { max-width: 100%; border: 1px solid #eee; border-radius: 8px; }
+  a.download { display: inline-block; margin-top: 12px; padding: 8px 16px; background: #1a1a1a; color: #fff; text-decoration: none; border-radius: 6px; }
+</style>
+</head>
+<body>
+  <h1>Vectorizador de Logos e Imágenes</h1>
+  <p class="sub">JPG, PNG, WEBP o BMP &rarr; SVG o PDF vectorial</p>
+
+  <div class="row">
+    <label>Formato:
+      <select id="format">
+        <option value="svg" selected>SVG</option>
+        <option value="pdf">PDF</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="flatten"> Fondo blanco en vez de transparente</label>
+  </div>
+
+  <div id="drop">
+    <p>Arrastrá una imagen acá o hacé clic para elegir un archivo</p>
+    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/bmp">
+  </div>
+
+  <div id="status"></div>
+  <div id="result"></div>
+
+<script>
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const statusEl = document.getElementById('status');
+const result = document.getElementById('result');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('hover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+async function handleFile(file) {
+  result.innerHTML = '';
+  statusEl.textContent = 'Vectorizando...';
+  const format = document.getElementById('format').value;
+  const flatten = document.getElementById('flatten').checked ? 'white' : 'none';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch(`/vectorize?format=${format}&flatten_background=${flatten}`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    statusEl.textContent = 'Listo.';
+
+    if (format === 'svg') {
+      result.innerHTML = await blob.text();
+    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vector.${format}`;
+    a.className = 'download';
+    a.textContent = `Descargar ${format.toUpperCase()}`;
+    result.appendChild(a);
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
