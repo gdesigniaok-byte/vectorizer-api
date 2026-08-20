@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Vectorization API",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "servers": [
     { "url": "https://YOUR-RENDER-URL.onrender.com" }
@@ -22,6 +22,12 @@
             "name": "flatten_background",
             "in": "query",
             "schema": { "type": "string", "enum": ["none", "white"], "default": "none" }
+          },
+          {
+            "name": "blur",
+            "in": "query",
+            "description": "Gaussian blur radius (0-10) to smooth input before tracing. Higher values produce fewer nodes.",
+            "schema": { "type": "number", "default": 0, "minimum": 0, "maximum": 10 }
           }
         ],
         "requestBody": {
