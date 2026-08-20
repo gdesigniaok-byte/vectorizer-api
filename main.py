@@ -21,11 +21,17 @@ app.add_middleware(
 )
 
 # --- Configuration (set these as environment variables on Render) ---
+# VECTORIZE_API_KEY: if set, /vectorize requires header "X-API-Key: <value>".
+#                     Leave unset while testing; set it before going public
+#                     to stop strangers from running up your compute bill.
+# MAX_UPLOAD_MB:      hard cap on upload size (default 8MB).
+# MAX_DIMENSION:      images are downscaled to at most this many px per side
+#                     before tracing, to keep CPU/memory bounded.
 API_KEY = os.environ.get("VECTORIZE_API_KEY")
 MAX_UPLOAD_MB = float(os.environ.get("MAX_UPLOAD_MB", 8))
 MAX_DIMENSION = int(os.environ.get("MAX_DIMENSION", 1600))
 
-SUPPORTED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/bmp"}
+SUPPORTED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/bmp", "image/jfif"}
 
 
 def check_api_key(x_api_key: Optional[str]):

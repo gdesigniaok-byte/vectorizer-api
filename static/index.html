@@ -22,7 +22,7 @@
 </head>
 <body>
   <h1>Vectorizador de Logos e Imágenes</h1>
-  <p class="sub">JPG, PNG, WEBP o BMP &rarr; SVG o PDF vectorial</p>
+  <p class="sub">JPG, JFIF, PNG, WEBP o BMP &rarr; SVG o PDF vectorial</p>
 
   <div class="row">
     <label>Formato:
@@ -39,8 +39,8 @@
   </div>
 
   <div id="drop">
-    <p>Arrastrá una imagen acá o hacé clic para elegir un archivo</p>
-    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/bmp">
+    <p>Arrastrá una imagen acá, hacé clic para elegir un archivo, o pegá con Ctrl+V</p>
+    <input type="file" id="fileInput" accept="image/jpeg,image/jfif,image/png,image/webp,image/bmp">
   </div>
 
   <div id="status"></div>
@@ -67,6 +67,18 @@ fileInput.addEventListener('change', () => {
 const blurSlider = document.getElementById('blur');
 const blurVal = document.getElementById('blurVal');
 blurSlider.addEventListener('input', () => { blurVal.textContent = blurSlider.value; });
+
+document.addEventListener('paste', e => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) handleFile(file);
+      return;
+    }
+  }
+});
 
 async function handleFile(file) {
   result.innerHTML = '';
