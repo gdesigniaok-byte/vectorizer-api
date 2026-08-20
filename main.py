@@ -60,10 +60,15 @@ async def vectorize_image(
         description="Gaussian blur radius (0-0.5) to smooth input before tracing.",
     ),
     simplify: float = Query(
-        1.5,
+        1.0,
         ge=0.0,
         le=3.0,
         description="Curve simplification tolerance (0-3). Higher = smoother, fewer nodes. 0 disables.",
+    ),
+    preset: str = Query(
+        "balanced",
+        pattern="^(balanced|smooth|sharp)$",
+        description="Preset: balanced (default), smooth (silhouettes, fewer nodes), sharp (small text, more detail)",
     ),
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ):
@@ -109,15 +114,27 @@ async def vectorize_image(
         img.save(buf, format=img_format)
         processed_bytes = buf.getvalue()
 
+        # Preset-tuned parameters: smooth keeps silhouettes clean,
+        # sharp preserves small text / fine detail, balanced is the middle ground.
+        if preset == "smooth":
+            p_speckle, p_layer, p_corner, p_length = 10, 32, 70, 5.5
+        elif preset == "sharp":
+            p_speckle, p_layer, p_corner, p_length = 2, 8, 45, 3.5
+        else:  # balanced
+            p_speckle, p_layer, p_corner, p_length = 4, 16, 60, 4.0
+        # blur slightly lengtens segments for even smoother output
+        if blur > 0.0:
+            p_length += 1.0
+
         svg_string = vtracer.Config(
             clustering="color-cluster",
             hierarchical="stacked",
             mode="spline",
-            filter_speckle=10,
+            filter_speckle=p_speckle,
             color_precision=6,
-            layer_difference=32,
-            corner_threshold=70,
-            length_threshold=6.0 if blur > 0.0 else 5.0,
+            layer_difference=p_layer,
+            corner_threshold=p_corner,
+            length_threshold=p_length,
             max_iterations=10,
             splice_threshold=45,
             path_precision=3,
