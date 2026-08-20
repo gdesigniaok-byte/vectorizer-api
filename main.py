@@ -8,9 +8,9 @@ from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from PIL import Image
+from PIL import Image, ImageFilter
 
-app = FastAPI(title="Vectorization API", version="1.1.0")
+app = FastAPI(title="Vectorization API", version="1.2.0")
 
 # Allow the bundled web UI (or any site you embed it on) to call this API.
 app.add_middleware(
@@ -21,12 +21,6 @@ app.add_middleware(
 )
 
 # --- Configuration (set these as environment variables on Render) ---
-# VECTORIZE_API_KEY: if set, /vectorize requires header "X-API-Key: <value>".
-#                     Leave unset while testing; set it before going public
-#                     to stop strangers from running up your compute bill.
-# MAX_UPLOAD_MB:      hard cap on upload size (default 8MB).
-# MAX_DIMENSION:      images are downscaled to at most this many px per side
-#                     before tracing, to keep CPU/memory bounded.
 API_KEY = os.environ.get("VECTORIZE_API_KEY")
 MAX_UPLOAD_MB = float(os.environ.get("MAX_UPLOAD_MB", 8))
 MAX_DIMENSION = int(os.environ.get("MAX_DIMENSION", 1600))
@@ -53,6 +47,12 @@ async def vectorize_image(
         pattern="^(none|white)$",
         description="Flatten a transparent background to white before tracing",
     ),
+    blur: float = Query(
+        0.0,
+        ge=0.0,
+        le=10.0,
+        description="Gaussian blur radius (0-10) to smooth input before tracing. Higher values produce fewer nodes.",
+    ),
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ):
     check_api_key(x_api_key)
@@ -78,6 +78,11 @@ async def vectorize_image(
         # Bound memory/CPU during tracing regardless of the source resolution.
         img.thumbnail((MAX_DIMENSION, MAX_DIMENSION))
 
+        # Optional Gaussian blur to smooth gradients and reduce tracing noise.
+        # This produces fewer, cleaner SVG paths at the cost of fine detail.
+        if blur > 0.0:
+            img = img.filter(ImageFilter.GaussianBlur(radius=blur))
+
         # Logos are frequently PNGs with transparent backgrounds. vtracer
         # traces the alpha channel as a shape, which can produce odd
         # artifacts — flattening to white first gives cleaner results.
@@ -92,17 +97,16 @@ async def vectorize_image(
         img.save(buf, format=img_format)
         processed_bytes = buf.getvalue()
 
-        svg_string = vtracer.convert_raw_image_to_svg(
+        svg_string = vtracer.convert_bytes_to_svg(
             processed_bytes,
-            img_format=("jpg" if img_format.upper() == "JPEG" else img_format.lower()),
             colormode="color",
             hierarchical="stacked",
             mode="spline",
-            filter_speckle=4,
+            filter_speckle=8 if blur > 0.0 else 4,
             color_precision=6,
             layer_difference=16,
             corner_threshold=60,
-            length_threshold=4.0,
+            length_threshold=6.0 if blur > 0.0 else 4.0,
             max_iterations=10,
             splice_threshold=45,
             path_precision=3,
