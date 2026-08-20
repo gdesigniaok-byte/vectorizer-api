@@ -32,6 +32,10 @@
       </select>
     </label>
     <label><input type="checkbox" id="flatten"> Fondo blanco en vez de transparente</label>
+    <label>Desenfoque:
+      <input type="range" id="blur" min="0" max="10" step="0.5" value="0">
+      <span id="blurVal">0</span>
+    </label>
   </div>
 
   <div id="drop">
@@ -60,17 +64,22 @@ fileInput.addEventListener('change', () => {
   if (fileInput.files.length) handleFile(fileInput.files[0]);
 });
 
+const blurSlider = document.getElementById('blur');
+const blurVal = document.getElementById('blurVal');
+blurSlider.addEventListener('input', () => { blurVal.textContent = blurSlider.value; });
+
 async function handleFile(file) {
   result.innerHTML = '';
   statusEl.textContent = 'Vectorizando...';
   const format = document.getElementById('format').value;
   const flatten = document.getElementById('flatten').checked ? 'white' : 'none';
+  const blur = document.getElementById('blur').value;
 
   const formData = new FormData();
   formData.append('file', file);
 
   try {
-    const res = await fetch(`/vectorize?format=${format}&flatten_background=${flatten}`, {
+    const res = await fetch(`/vectorize?format=${format}&flatten_background=${flatten}&blur=${blur}`, {
       method: 'POST',
       body: formData,
     });
