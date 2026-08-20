@@ -59,6 +59,12 @@ async def vectorize_image(
         le=0.5,
         description="Gaussian blur radius (0-0.5) to smooth input before tracing.",
     ),
+    simplify: float = Query(
+        1.5,
+        ge=0.0,
+        le=3.0,
+        description="Curve simplification tolerance (0-3). Higher = smoother, fewer nodes. 0 disables.",
+    ),
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ):
     check_api_key(x_api_key)
@@ -107,15 +113,15 @@ async def vectorize_image(
             clustering="color-cluster",
             hierarchical="stacked",
             mode="spline",
-            filter_speckle=8 if blur > 0.0 else 4,
+            filter_speckle=10,
             color_precision=6,
-            layer_difference=24,
-            corner_threshold=60,
-            length_threshold=6.0 if blur > 0.0 else 4.0,
+            layer_difference=32,
+            corner_threshold=70,
+            length_threshold=6.0 if blur > 0.0 else 5.0,
             max_iterations=10,
             splice_threshold=45,
             path_precision=3,
-            simplify=2.0,
+            simplify=simplify if simplify > 0 else None,
         ).convert_bytes(processed_bytes)
 
         if format == "svg":
