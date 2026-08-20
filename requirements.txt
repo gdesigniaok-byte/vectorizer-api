@@ -4,3 +4,4 @@ python-multipart
 vtracer==1.0.0a3
 cairosvg
 pillow
+httpx

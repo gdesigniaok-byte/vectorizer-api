@@ -47,6 +47,14 @@
         <option value="sharp">Nítido (texto fino)</option>
       </select>
     </label>
+    <label>Escala:
+      <select id="upscale">
+        <option value="1" selected>1×</option>
+        <option value="2">2× (texto fino)</option>
+        <option value="3">3×</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="llmText"> Texto con IA (beta)</label>
   </div>
 
   <div id="drop">
@@ -103,12 +111,14 @@ async function handleFile(file) {
   const blur = document.getElementById('blur').value;
   const simplify = document.getElementById('simplify').value;
   const preset = document.getElementById('preset').value;
+  const upscale = document.getElementById('upscale').value;
+  const llmText = document.getElementById('llmText').checked;
 
   const formData = new FormData();
   formData.append('file', file);
 
   try {
-    const res = await fetch(`/vectorize?format=${format}&flatten_background=${flatten}&blur=${blur}&simplify=${simplify}&preset=${preset}`, {
+    const res = await fetch(`/vectorize?format=${format}&flatten_background=${flatten}&blur=${blur}&simplify=${simplify}&preset=${preset}&upscale=${upscale}&llm_text=${llmText}`, {
       method: 'POST',
       body: formData,
     });
