@@ -103,9 +103,8 @@ async def vectorize_image(
         img.save(buf, format=img_format)
         processed_bytes = buf.getvalue()
 
-        svg_string = vtracer.convert_bytes_to_svg(
-            processed_bytes,
-            colormode="color",
+        svg_string = vtracer.Config(
+            clustering="color-cluster",
             hierarchical="stacked",
             mode="spline",
             filter_speckle=8 if blur > 0.0 else 4,
@@ -116,7 +115,7 @@ async def vectorize_image(
             max_iterations=10,
             splice_threshold=45,
             path_precision=3,
-        )
+        ).convert_bytes(processed_bytes)
 
         if format == "svg":
             return StreamingResponse(

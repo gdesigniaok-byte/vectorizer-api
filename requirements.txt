@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
 python-multipart
-vtracer
+vtracer==1.0.0a3
 cairosvg
 pillow
