@@ -92,8 +92,9 @@ async def vectorize_image(
         img.save(buf, format=img_format)
         processed_bytes = buf.getvalue()
 
-        svg_string = vtracer.convert_bytes_to_svg(
+        svg_string = vtracer.convert_raw_image_to_svg(
             processed_bytes,
+            img_format=("jpg" if img_format.upper() == "JPEG" else img_format.lower()),
             colormode="color",
             hierarchical="stacked",
             mode="spline",
